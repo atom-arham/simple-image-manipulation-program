@@ -12,9 +12,10 @@ class importExport:
         super().__init__()
         self.file = None
         self.numpy_image = None;
+        self.hsv_image = None;
         self.history = history()
-        self.base_brightness_image = None
 
+        self.base_brightness_image = None
         #brightness stuff
         self.previous_brightness = None;
 
@@ -45,6 +46,7 @@ class importExport:
         
     def numpyImage(self, file_path):
         self.numpy_image = cv.imread(file_path)
+        self.original_image = self.numpy_image.copy()
         self.base_brightness_image = self.numpy_image.copy()
 
 
@@ -126,8 +128,8 @@ class importExport:
             construct = image
         else:
             gray = cv.cvtColor(image,cv.COLOR_BGR2GRAY)
-            medianBlur = cv.medianBlur(gray,5)
-            adpativeThreshold = cv.adaptiveThreshold(medianBlur,255,cv.ADAPTIVE_THRESH_MEAN_C,cv.THRESH_BINARY,7,7)
+            medianBlur = cv.medianBlur(gray,7)
+            adpativeThreshold = cv.adaptiveThreshold(medianBlur,255,cv.ADAPTIVE_THRESH_MEAN_C,cv.THRESH_BINARY,9,9)
             edges = cv.edgePreservingFilter(image,flags=2,sigma_s=150,sigma_r=0.75) 
             construct = cv.bitwise_and(edges,edges,mask=adpativeThreshold)
         self.numpy_image = construct
@@ -162,6 +164,92 @@ class importExport:
         self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(empty_image)   
 
+#Blur
+
+    def simple_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        blur = cv.blur(image,(5,5))
+        self.numpy_image = blur
+        to_pixmap = self.numpy_to_qpixmap(blur)
+        return to_pixmap
+
+    def gaussian_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        gaussian = cv.GaussianBlur(image,(7,7),0)
+        self.numpy_image = gaussian
+        to_pixmap = self.numpy_to_qpixmap(gaussian)
+        return to_pixmap
+
+    def median_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        median = cv.medianBlur(image,7)
+        self.numpy_image = median
+        to_pixmap = self.numpy_to_qpixmap(median)
+        return to_pixmap
+
+    def bilateral_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        bilateral = cv.bilateralFilter(image,9,75,75)
+        self.numpy_image = bilateral
+        to_pixmap = self.numpy_to_qpixmap(bilateral)
+        return to_pixmap
+    
+    def box_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        box = cv.boxFilter(image,-1,(7,7),normalize=True)
+        self.numpy_image = box
+        to_pixmap = self.numpy_to_qpixmap(box)
+        return to_pixmap
+        
+    def motion_blur(self):
+        self.history.push(self.numpy_image)
+        image = self.numpy_image
+
+        k_size = 15
+        kernel = np.zeros((k_size,k_size))
+        kernel[int((k_size-1)/2),:] = np.ones(k_size)
+        kernel = kernel/k_size
+
+        motion = cv.filter2D(image,-1,kernel)
+        self.numpy_image = motion
+        to_pixmap = self.numpy_to_qpixmap(motion)
+        return to_pixmap
+
+#TINT
+
+    def delta_tint(self, blue=1.0, green=1.0,red=1.0):
+        if self.numpy_image is None:
+            return "There are no numpy image"
+        
+        image = self.numpy_image.copy()
+
+        blue_channel, green_channel, red_channel = cv.split(image)
+
+        blue_channel = cv.add(blue_channel, blue)
+        green_channel = cv.add(green_channel, green)
+        red_channel = cv.add(red_channel, red)
+
+        blue_channel = np.clip(blue_channel, 0, 255).astype(np.uint8)
+        green_channel = np.clip(green_channel, 0, 255).astype(np.uint8)
+        red_channel = np.clip(red_channel, 0, 255).astype(np.uint8)
+
+        self.adjusted_preview = cv.merge((blue_channel, green_channel, red_channel))
+        return self.numpy_to_qpixmap(self.adjusted_preview)
+
+    def apply_tint(self):
+        self.numpy_image = self.adjusted_preview
+        return self.numpy_to_qpixmap(self.adjusted_preview)
+
 
     def delta_brightness(self, brightness):
 
@@ -172,22 +260,17 @@ class importExport:
 
         self.adjusted_preview = cv.convertScaleAbs(image, alpha=1.0, beta=brightness)
         return self.numpy_to_qpixmap(self.adjusted_preview)
-    
-
 
     def apply_brightness(self):
         self.numpy_image = self.adjusted_preview
         self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(self.adjusted_preview)
     
-    
     def apply_effect(self):
         self.history.push(self.numpy_image)
 
     def delta_contrast(self,contrast):
-        print("Applied")
-        self.history.push(self.numpy_image)
-
+        
         if self.numpy_image is None:
             return "There are no numpy image"
         
@@ -202,6 +285,11 @@ class importExport:
         self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(self.con_adjusted)
 
+    def delta_hue(self):
+        #
+        # FIND A WAY TO NOT CONVERT HSB IN EVERY RUN
+        #
+        pass
 
     def undo(self):
         self.numpy_image = self.history.undo(self.numpy_image)
@@ -234,6 +322,36 @@ class importExport:
 
         raise ValueError("Unsupported image format")
     
+    def is_hsv(self,image):
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            hue_max = np.max(image[::0])
+            if hue_max <= 179:
+                return True
+        return False
+    
+    def clarity(self,amount=1.0):
+        sigma=1.0
+        threshold=0
+        image = self.numpy_image.copy()
+
+        g_blur = cv.GaussianBlur(image,(5,5),sigma)
+        sharp = float(amount+1)*image - float(amount)* g_blur
+
+        sharp = np.maximum(sharp, np.zeros(sharp.shape))
+        sharp = np.minimum(sharp, np.zeros(sharp.shape))
+        sharp = sharp.round().astype(np.uint8)
+
+        if threshold > 0:
+            low_contrast = np.absolute(image - g_blur) < threshold
+            np.copyto(sharp,image, where=low_contrast)
+
+        self.clar_adjusted_preview = sharp
+        return self.numpy_to_qpixmap(self.clar_adjusted_preview)
+
+    def apply_clarity(self):
+        self.numpy_image = self.clar_adjusted_preview
+        return self.numpy_to_qpixmap(self.clar_adjusted_preview) 
+
 class history:
     def __init__(self):
         self.undo_stack = []
@@ -255,9 +373,6 @@ class history:
             self.undo_stack.append(current.copy())
             return self.redo_stack.pop()
         return current
-    
-        
-
 
 ie = importExport()
 
