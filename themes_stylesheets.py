@@ -80,12 +80,12 @@ def darkmode():
     /* ===== Tabs ===== */
     QTabWidget::pane {
         border: 1px solid #2a2a2a;
-        background: #9a1a1a;
+        background: #2C2C36;
         border-radius: 8px;
         margin: 0px;
     }
     QTabBar::tab {
-        background: #3b2b2b;
+        background-color: #2C2C36;   
         color: #f5f5f5;
         padding: 6px 14px;
         border-top-left-radius: 6px;
@@ -311,17 +311,17 @@ def lightmode():
 
             /* Custom Panels */
         #main_panel {
-            background-color: #1e1e2f;   /* dark blue-gray */
+            background-color: #faf9fd;  
             border: 2px solid #3f2c5f;
             }
 
         #filter_panel {
-            background-color: #2f1e2f;   /* deep purple */
+            background-color: #faf9fd;   /* deep purple */
             border: 2px solid #3f2c5f;
             }
 
         #right_panel {
-            background-color: #1e2f2f;   /* teal tint */
+            background-color: #faf9fd;   /* teal tint */
             border: 2px solid #3f2c5f;
             }
             """)

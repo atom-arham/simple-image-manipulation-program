@@ -1,6 +1,7 @@
 
 #utilities.py
 # from PyQt6.QtWidgets import QFileDialog
+import colorsys
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
@@ -14,10 +15,6 @@ class importExport:
         self.numpy_image = None;
         self.hsv_image = None;
         self.history = history()
-
-        self.base_brightness_image = None
-        #brightness stuff
-        self.previous_brightness = None;
 
     def save_file(self, path):
         if self.numpy_image is not None and path:
@@ -48,7 +45,6 @@ class importExport:
         self.numpy_image = cv.imread(file_path)
         self.original_image = self.numpy_image.copy()
         self.base_brightness_image = self.numpy_image.copy()
-
 
     def grayScale(self):
         self.history.push(self.numpy_image)
@@ -253,44 +249,160 @@ class importExport:
 
     def delta_brightness(self, brightness):
 
-        if self.numpy_image is None:
-            return "There are no numpy image"
-        
+        self.isNumpyImage(self.numpy_image)
+
         image = self.numpy_image.copy()
 
         self.adjusted_preview = cv.convertScaleAbs(image, alpha=1.0, beta=brightness)
+        
         return self.numpy_to_qpixmap(self.adjusted_preview)
 
     def apply_brightness(self):
         self.numpy_image = self.adjusted_preview
-        self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(self.adjusted_preview)
     
-    def apply_effect(self):
-        self.history.push(self.numpy_image)
+    def delta_blacks(self, blacks):
+        self.isNumpyImage(self.numpy_image)
+
+        image = self.numpy_image.astype(np.float32)
+
+        blacks_interp = np.interp(blacks,[0,200],[0,100])
+        image = np.clip((image - blacks_interp),0,255)
+        self.black_adjusted = image.astype(np.uint8)
+        return self.numpy_to_qpixmap(self.black_adjusted)
+        
+    def apply_blacks(self):
+        self.numpy_image = self.black_adjusted
+        return self.numpy_to_qpixmap(self.numpy_image) 
+
+    def delta_whites(self, whites):
+        self.isNumpyImage(self.numpy_image)
+
+        image = self.numpy_image.astype(np.float32)
+
+        whites_interp = np.interp(whites,[0,200],[255,155])
+        image = (image-0)*(255.0/whites_interp)
+        image = np.clip(image,0,255)
+        self.whites_adjusted = image.astype(np.uint8)
+        return self.numpy_to_qpixmap(self.whites_adjusted)
+        
+    def apply_whites(self):
+        self.numpy_image = self.whites_adjusted
+        return self.numpy_to_qpixmap(self.numpy_image)
+
+    def delta_noise(self, noise):
+        self.isNumpyImage(self.numpy_image)
+
+        image = self.numpy_image.astype(np.float32)
+        #uniform
+        noise_interp = np.interp(noise, [0,100],[0,50])
+        noise = np.random.normal(0, noise_interp, image.shape)
+        image = image + noise
+        image = np.clip(image, 0, 255)
+        self.noise_adjusted = image.astype(np.uint8)
+        return self.numpy_to_qpixmap(self.noise_adjusted)
+    
+    def delta_noise_uniform(self, noise):
+        self.isNumpyImage(self.numpy_image)
+
+        image = self.numpy_image.astype(np.float32)
+        #uniform
+        noise_interp = np.interp(noise, [0,100],[0,50])
+        noise = np.random.uniform(5, noise_interp, image.shape)
+        image = image + noise
+        image = np.clip(image, 0, 255)
+        self.noise_adjusted = image.astype(np.uint8)
+        return self.numpy_to_qpixmap(self.noise_adjusted)
+
+    def delta_noise_saltpepper(self, noise):
+        self.isNumpyImage(self.numpy_image)
+
+        image = self.numpy_image.astype(np.float32)
+        #uniform
+        noise_interp = np.interp(noise, [0,100],[0,0.05])
+
+        blacks = np.random.rand(*image.shape[:2]) < noise_interp/ 2
+        whites = np.random.rand(*image.shape[:2]) < noise_interp/2
+
+        if image.ndim == 3:
+            image[blacks] = [255,255,255]
+            image[whites] = [0,0,0]
+        else:
+            image[blacks] = 255
+            image[whites] = 0
+        
+        image = image + noise
+        image = np.clip(image, 0, 255)
+
+        self.noise_adjusted = image.astype(np.uint8)
+
+        return self.numpy_to_qpixmap(self.noise_adjusted)  
+    def apply_noise(self):
+        self.numpy_image = self.noise_adjusted
+        return self.numpy_to_qpixmap(self.numpy_image) 
+
+    def delta_hue(self, degree):
+        self.isNumpyImage(self.numpy_image)
+        image = self.numpy_image.astype(np.float32) / 255.0
+        h, w, c = image.shape
+        result = np.zeros_like(image)
+
+        hue_shift = degree / 360.0 
+
+        hsv = cv.cvtColor(self.numpy_image, cv.COLOR_RGB2HSV).astype(np.float32)
+        hsv[..., 0] = (hsv[..., 0] + degree) % 180  # OpenCV hue range = [0,180)
+        hsv = np.clip(hsv, 0, 255).astype(np.uint8)
+        self.hue_adjusted = cv.cvtColor(hsv, cv.COLOR_HSV2RGB)
+
+        return self.numpy_to_qpixmap(self.hue_adjusted)
+    
+    def apply_hue(self):
+        self.numpy_image = self.hue_adjusted
+        return self.numpy_to_qpixmap(self.hue_adjusted)
+    
+    def delta_gaussian_falloff(self,strength):
+        image = self.numpy_image
+        rows, cols = image.shape[:2]
+    
+        kernel_x = cv.getGaussianKernel(cols, strength)
+        kernel_y = cv.getGaussianKernel(rows, strength)
+    
+        mask = kernel_y * kernel_x.T
+        mask = mask / np.max(mask)
+    
+        vignette = np.empty_like(image)
+        for i in range(image.shape[2]):
+            vignette[:, :, i] = image[:, :, i] * mask
+
+        self.gaussian_falloff = vignette.astype(np.uint8)
+
+        return self.numpy_to_qpixmap(self.gaussian_falloff)
+
+    def apply_gaussian_falloff(self):
+        self.numpy_image = self.gaussian_falloff 
+        return self.numpy_to_qpixmap(self.numpy_image)       
 
     def delta_contrast(self,contrast):
-        
         if self.numpy_image is None:
             return "There are no numpy image"
         
-        image = self.numpy_image.copy()
-
-        alpha = 1.0 + (contrast/100.0)
-        self.con_adjusted = cv.convertScaleAbs(image, alpha=alpha, beta=0)
-        return self.numpy_to_qpixmap(self.con_adjusted)      
+        image = (self.numpy_image.copy().astype(np.float32))/255.0
+        con = contrast/100
+        image = (image - 0.5) * con + 0.5
+        image = np.clip(image,0,1)
+        image = (image*255).astype(np.uint8)
+        self.con_adjusted = image
+        return self.numpy_to_qpixmap(image)      
 
     def apply_contrast(self):
         self.numpy_image = self.con_adjusted
-        self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(self.con_adjusted)
 
-    def delta_hue(self):
-        #
-        # FIND A WAY TO NOT CONVERT HSB IN EVERY RUN
-        #
-        pass
+    def isNumpyImage(self, image):
+        if image is None:
+            return "There are no numpy image"
 
+        
     def undo(self):
         self.numpy_image = self.history.undo(self.numpy_image)
         return self.numpy_to_qpixmap(self.numpy_image)
@@ -375,4 +487,3 @@ class history:
         return current
 
 ie = importExport()
-

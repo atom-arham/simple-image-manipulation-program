@@ -1,8 +1,8 @@
 import sys 
-from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QComboBox,
-                               QMenuBar, QMenu, QFrame, QHBoxLayout, QFileDialog, QPushButton, QGridLayout, QSlider)
-from PySide6.QtCore import Qt   
-from PySide6.QtGui import QAction
+from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QScrollArea,QComboBox,
+                               QMenuBar, QToolButton,QMenu, QFrame, QHBoxLayout, QFileDialog, QPushButton, QGridLayout, QSlider, QTabWidget)
+from PySide6.QtCore import Qt, QSize   
+from PySide6.QtGui import QAction, QIcon
 
 from utilities import importExport,history
 from themes_stylesheets import darkmode, lightmode
@@ -12,171 +12,174 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ie = ie
         self.setWindowTitle("Main Window")
-        self.setGeometry(100, 100, 1280, 720)
-        self.ui()     
+        self.setGeometry(100, 100, 1920, 1080)
+        #self.ui()     
         self.setStyleSheet(darkmode())
 
-    def ui(self):
-        central = QWidget()
-        self.setCentralWidget(central)
+        self.central = QWidget()
+        self.setCentralWidget(self.central)
 
-        main_layout = QVBoxLayout(central)
+        self.main_layout = QVBoxLayout(self.central)
 
+
+        self.menubar()
+        self.ui()
+
+    def menubar(self):
         menu_bar = QMenuBar(self)
-        #menu_bar.setFixedHeight(25)
-        #menu_bar.setStyleSheet("background-color: rgba(163,102,255,25);border:none;")
 
-        file_menu = QMenu("File", self)
+        import_menu = QAction("Import", self)
+        save_menu = QAction("Save", self)
+        apprearance_menu = QMenu("Appearance", self)
+        undo_menu = QAction("Undo", self)
+        redo_menu = QAction("Redo", self)
 
-        options_menu = QMenu("Options", self)
-        mode_sub_menu = QMenu("Appearance", options_menu)
-        dark_appearance = QAction("Dark", mode_sub_menu)
-        dark_appearance.triggered.connect(self.darkmode_connect)
+        apprearance_menu.addAction("Dark Mode", self.darkmode_connect)
+        apprearance_menu.addAction("Light Mode", self.lightmode_connect)
 
-        light_appearance = QAction("Light", mode_sub_menu)
-        light_appearance.triggered.connect(self.lightmode_connect)
+        import_menu.triggered.connect(self.import_file)
+        save_menu.triggered.connect(self.save_file)
 
-        tool_undo = QAction("Undo", self)
-        tool_redo = QAction("Redo", self)
-
+        menu_bar.addAction(import_menu)
+        menu_bar.addAction(save_menu)  
+        menu_bar.addMenu(apprearance_menu) 
+        menu_bar.addAction(undo_menu)
+        menu_bar.addAction(redo_menu)
         
-        save_action = QAction("Save", self)
-        save_action.triggered.connect(self.save_file)
-        
-        import_action = QAction("Import", self)
-        import_action.triggered.connect(self.import_file)
-
-        file_menu.addAction(save_action)
-        file_menu.addAction(import_action)
-
-        menu_bar.addMenu(file_menu)
-        mode_sub_menu.addAction(light_appearance)  
-        mode_sub_menu.addAction(dark_appearance)
-        options_menu.addMenu(mode_sub_menu)
-        menu_bar.addMenu(options_menu)
-        menu_bar.addAction(tool_undo)
-        menu_bar.addAction(tool_redo)
-
         self.setMenuBar(menu_bar)
 
+    def ui(self):
+
+        #Frame
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.NoFrame)
         frame.setLineWidth(0)
-        main_layout.addWidget(frame)
 
-        self.panel_layout = QHBoxLayout(frame)
-        self.panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.panel_layout.setSpacing(0)
+        middle_layout = QHBoxLayout(frame)
+        left_layout = QVBoxLayout()
 
-        # self.tools_side_panel = QWidget()
-        # self.tools_side_panel.setFixedWidth(50)
-        # self.tools_side_panel.setStyleSheet("background-color: rgba(163,102,255,65);border:none;")
-        # self.tool_side_panel_items()
+        #Main Layout
+        self.main_layout.addWidget(frame)
 
+        #Main Panel --> display image 
         self.main_panel = QLabel()
-        #self.main_panel.setStyleSheet("background-color: rgba(163,102,255,25);border:none;")
-        self.main_panel.setAlignment(Qt.AlignCenter)
-        self.main_panel.setScaledContents(True)
+        self.main_panel.setMinimumSize(640, 480)
         
-        self.right_side_panel = QWidget()
-        self.right_side_panel.setFixedWidth(600)
-        self.right_side_panel.setContentsMargins(2,2,2,2)
-        #self.right_side_panel.setStyleSheet("background-color: rgba(163,102,255,45);border:none;")
+        left_layout.addWidget(self.main_panel,7)
+
+        #Filter Panel --> Filters are kept
+        self.filter_panel = QFrame()
+        self.filter_panel.setFixedHeight(200)
+        
+
+        self.filter_layout = QVBoxLayout(self.filter_panel)
+        left_layout.addWidget(self.filter_panel,1)
+
+        #Tab widget
+        self.filter_tabs = QTabWidget()
+        self.filter_tabs.addTab(self.filter_items(), "Filters")
+        self.filter_tabs.addTab(self.blur_items(), "Blurs")
+
+        self.filter_layout.addWidget(self.filter_tabs)
+        #left_layout.addWidget(self.filter_tabs)
+
+        #Right Panel --> Adjustments are kept
+        self.right_panel = QWidget()
+        self.right_panel.setFixedWidth(450)
+        
+        self.right_layout = QGridLayout(self.right_panel)
+        #Right Panel End
+
+        middle_layout.addLayout(left_layout,3)
+        middle_layout.addWidget(self.right_panel,1)
+
+        #Setting Object Names for Stylesheet
+        self.main_panel.setObjectName("main_panel")
+        self.filter_panel.setObjectName("filter_panel")
+        self.right_panel.setObjectName("right_panel")
+
+        self.main_layout.addLayout(middle_layout,1)
         self.right_panel_items()
 
-        #self.panel_layout.addWidget(self.tools_side_panel)
-        self.panel_layout.addWidget(self.main_panel)
-        self.panel_layout.addWidget(self.right_side_panel)
-
-    def right_frames(self):
-         
-        frame = QFrame(self.right_side_panel)
-        frame.setFrameShape(QFrame.Shape.NoFrame)
-        frame.setStyleSheet("background-color: rgba(163,102,255,255);border:none;")
-        self.layout = QVBoxLayout(frame)
-        self.right_side_panel.addWidget(self.layout)
+    def filter_items(self):
         
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
 
-    def tool_side_panel_items(self):
-        layout_left = QVBoxLayout(self.tools_side_panel)  
-        layout_left.setContentsMargins(5,5,5,5)
-        layout_left.setSpacing(0)
+        container = QWidget()
+        horizontal_layout = QHBoxLayout(container)         
 
-        tool_undo = QPushButton("Undo")
-        tool_undo.clicked.connect(his.undo)
-
-        tool_redo = QPushButton("Redo")
-        tool_redo.clicked.connect(his.redo)
-        tool_redo.setStyleSheet(tool_undo.styleSheet())
-        
-        self.right_panel_items.setSpacing(0)
-        layout_left.addWidget(tool_undo)
-        layout_left.addWidget(tool_redo)
-        #tool_label.setStyleSheet("""""")
-
-    def right_panel_items(self):
-        self.layout = QGridLayout(self.right_side_panel)
-        self.layout.setHorizontalSpacing(20)
-        self.layout.setVerticalSpacing(20)
-        #self.layout.setContentsMargins(100,100,100,100)
-        self.layout.setContentsMargins(5,5,5,10)
-        #GrayScale
-        grayscale_button = QPushButton("Grayscale")
-        grayscale_button.setFixedSize(180,35)
-        grayscale_button.clicked.connect(self.grayscale)
-        
-        #Invert
-        invert_button = QPushButton("Invert")
-        invert_button.setFixedSize(180,35)
+        invert_button = QToolButton()
+        invert_button.setIcon(QIcon(r"filter_previews\invert.jpg"))
+        invert_button.setIconSize(QSize(80, 80))
+        invert_button.setText("Invert")
+        invert_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        invert_button.setFixedSize(100, 105)
         invert_button.clicked.connect(self.invert)
-        invert_button.setStyleSheet(grayscale_button.styleSheet())
-        #Sobel
-        sobel_button = QPushButton("Sobel")
-        sobel_button.setFixedSize(180,35)
+
+        grayscale_button = QToolButton()
+        grayscale_button.setIcon(QIcon(r"filter_previews\grayscale.jpg"))
+        grayscale_button.setIconSize(QSize(80, 80))
+        grayscale_button.setText("Grayscale")
+        grayscale_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        grayscale_button.setFixedSize(100, 105)
+        grayscale_button.clicked.connect(self.grayscale)
+
+        sobel_button = QToolButton()
+        sobel_button.setIcon(QIcon(r"filter_previews\sobel.jpg"))
+        sobel_button.setIconSize(QSize(80, 80))
+        sobel_button.setText("Sobel")
+        sobel_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        sobel_button.setFixedSize(100,105)
         sobel_button.clicked.connect(self.sobel)
-        sobel_button.setStyleSheet(grayscale_button.styleSheet())
-        #Canny
-        canny_button = QPushButton("Canny")
-        canny_button.setFixedSize(180,35)
-        canny_button.clicked.connect(self.canny)
-        canny_button.setStyleSheet(grayscale_button.styleSheet())
 
-        sepia_button = QPushButton("Sepia")
-        sepia_button.setFixedSize(180,35)
+        sepia_button = QToolButton()
+        sepia_button.setIcon(QIcon(r"filter_previews\sepia.jpg"))
+        sepia_button.setIconSize(QSize(80, 80))
+        sepia_button.setText("Sepia")
+        sepia_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        sepia_button.setFixedSize(100,105)
         sepia_button.clicked.connect(self.sepia)
-        sepia_button.setStyleSheet(grayscale_button.styleSheet())
+        
 
-        cartoon_button = QPushButton("Cartoon")
-        cartoon_button.setFixedSize(180,35)
+        cartoon_button = QToolButton()
+        cartoon_button.setIcon(QIcon(r"filter_previews\cartoon.jpg"))
+        cartoon_button.setIconSize(QSize(80, 80))
+        cartoon_button.setText("Cartoon")
+        cartoon_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        cartoon_button.setFixedSize(100,105)
         cartoon_button.clicked.connect(self.cartoon)
-        cartoon_button.setStyleSheet(grayscale_button.styleSheet())
+        
 
-        emboss_button = QPushButton("Emboss")
-        emboss_button.setFixedSize(180,35)
+        emboss_button = QToolButton()
+        emboss_button.setIcon(QIcon(r"filter_previews\emboss.jpg"))
+        emboss_button.setIconSize(QSize(80, 80))
+        emboss_button.setText("Emboss")
+        emboss_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        emboss_button.setFixedSize(100,105)
         emboss_button.clicked.connect(self.emboss)
-        emboss_button.setStyleSheet(grayscale_button.styleSheet())
-
-        blur_frame_1 = QFrame()
-        blur_frame_1.setFrameShape(QFrame.Shape.HLine)
-        blur_frame_1.setLineWidth(1)
-        blur_frame_1.setContentsMargins(0,0,0,0)
-
-        blur_frame_2 = QFrame()
-        blur_frame_2.setFrameShape(QFrame.Shape.HLine)
-        blur_frame_2.setLineWidth(1)
-        blur_frame_2.setContentsMargins(0,0,0,0)
-
-        blur_frame3 = QFrame()
-        blur_frame3.setFrameShape(QFrame.Shape.HLine)
-        blur_frame3.setLineWidth(1)   
-        blur_frame3.setContentsMargins(0,0,0,0)
-
-        blur_layout = QVBoxLayout(blur_frame_1)
-        blur_layout.setContentsMargins(0,0,0,0)
-        #blur_label = QLabel("Racial Blurs")
-        #blur_label.setStyleSheet("font-weight: 600; font-size: 14px;margin:0px;padding:0px;")
+        
+        horizontal_layout.addWidget(invert_button)
+        horizontal_layout.addWidget(grayscale_button)
+        horizontal_layout.addWidget(sobel_button)
+        horizontal_layout.addWidget(sepia_button)
+        horizontal_layout.addWidget(cartoon_button)
+        horizontal_layout.addWidget(emboss_button)
 
 
+        scroll_area.setWidget(container)
+        #self.filter_layout.addWidget(scroll_area)
+        return scroll_area
+
+    def blur_items(self):
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        #scroll_area.setFixedHeight(200)
+        #scroll_area.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        container = QWidget()
+        vertical_layout = QHBoxLayout(container)  
+       
         simple_blur = QPushButton("Simple")
         simple_blur.setFixedSize(150,35)
         simple_blur.clicked.connect(self.simple_blur)
@@ -201,136 +204,105 @@ class MainWindow(QMainWindow):
         motion_blur.setFixedSize(150,35)
         motion_blur.clicked.connect(self.motion_blur)
 
+        vertical_layout.addWidget(simple_blur)
+        vertical_layout.addWidget(gaussian_blur)
+        vertical_layout.addWidget(median_blur)
+        vertical_layout.addWidget(bilateral_blur)
+        vertical_layout.addWidget(box_filer)
+        vertical_layout.addWidget(motion_blur)
 
-        #self.layout.addWidget(blur_label,5,0)
+        scroll_area.setWidget(container)
+        #self.right_layout.addWidget(scroll_area, alignment=Qt.AlignmentFlag.AlignTop|Qt.AlignmentFlag.AlignHCenter)
+        return scroll_area
 
-        self.layout.addWidget(blur_frame_1,4,0,1,3)
-        self.layout.addWidget(blur_frame_2,8,0,1,3)
-        self.layout.addWidget(blur_frame3,12,0,1,3)
+    def right_panel_items(self):
+        self.right_layout.setContentsMargins(25,25,25,25)
 
-        self.layout.addWidget(grayscale_button, 0,0)
-        self.layout.addWidget(invert_button, 0,1)
-        self.layout.addWidget(sobel_button,0,2)
-        self.layout.addWidget(canny_button,1,0)
-        self.layout.addWidget(sepia_button,1,1)
-        self.layout.addWidget(cartoon_button,1,2)
-        self.layout.addWidget(emboss_button,2,0)
+        self.adjustment_tabs = QTabWidget()
+        self.adjustment_tabs.addTab(self.adjustments(), "Adjustment")
+        self.adjustment_tabs.addTab(self.fx(), "FX")
+        self.adjustment_tabs.addTab(self.color_adjustments(),"Colour")
 
-        self.layout.addWidget(simple_blur,6,0)
-        self.layout.addWidget(gaussian_blur,6,1)
-        self.layout.addWidget(median_blur,6,2)
-        self.layout.addWidget(bilateral_blur,7,0)
-        self.layout.addWidget(box_filer,7,1)
-        self.layout.addWidget(motion_blur,7,2)
+        self.right_layout.addWidget(self.adjustment_tabs) 
 
-        #brightness
-        brightness_label = QLabel("Brightness")
-        self.brightness_slider = QSlider(Qt.Horizontal)
-        self.brightness_slider.setMinimum(-100)
-        self.brightness_slider.setMaximum(100)
-        self.brightness_slider.setValue(0)
-        self.brightness_slider.valueChanged.connect(self.update_brightness)
+
+    def slider_function(self,label,max,min,default,update_call,apply_call):
+        label = QLabel(label)
+        slider = QSlider(Qt.Horizontal)
+        slider.setMinimum(min)
+        slider.setMaximum(max)
+        slider.setValue(default)
+
+        slider.valueChanged.connect(update_call)
+
+        slider_apply = QPushButton("Apply")
+        slider_apply.setVisible(True)
+
+        slider_apply.clicked.connect(apply_call)
+
+
+        #label_add = self.right_layout.addWidget(label,row,0)
+        #slider_add = self.right_layout.addWidget(slider,row,1)
+        #apply_add = self.right_layout.addWidget(slider_apply,row,2)
+
+        return label, slider, slider_apply
+    
+    def adjustments(self):
+        brightness_label, self.brightness_slider, self.brightness_apply = self.slider_function("Brightness",100,-100,0,self.update_brightness,self.apply_brightness)
+        self.right_layout.addWidget(brightness_label,0,0)
+        self.right_layout.addWidget(self.brightness_slider ,0,1)
+        self.right_layout.addWidget(self.brightness_apply ,0,2)
+
+        #self.right_layout.addWidget(brightness_label)
+
+        contrast_label, self.contrast_slider, self.contrast_apply = self.slider_function("Contrast",200,0,100,self.update_contrast,self.apply_contrast)
+        self.right_layout.addWidget(contrast_label,1,0)
+        self.right_layout.addWidget(self.contrast_slider ,1,1)
+        self.right_layout.addWidget(self.contrast_apply ,1,2)
+
+        blacks_label, self.blacks_slider, self.blacks_apply = self.slider_function("Blacks",200,0,0,self.update_blacks,self.apply_blacks)
+        self.right_layout.addWidget(blacks_label,2,0)
+        self.right_layout.addWidget(self.blacks_slider ,2,1)
+        self.right_layout.addWidget(self.blacks_apply ,2,2)
+
+        whites_label, self.whites_slider, self.whites_apply = self.slider_function("Whites",200,0,0,self.update_whites,self.apply_whites)
+        self.right_layout.addWidget(whites_label,3,0)
+        self.right_layout.addWidget(self.whites_slider ,3,1)
+        self.right_layout.addWidget(self.whites_apply ,3,2)
+    
+    def fx(self):
+        gaussian_noise_label, self.gaussian_noise_slider, self.gaussian_noise_apply = self.slider_function("Normal Noise",500,0,0,self.update_noise,self.apply_noise)
+        self.right_layout.addWidget(gaussian_noise_label,4,0)
+        self.right_layout.addWidget(self.gaussian_noise_slider ,4,1)
+        self.right_layout.addWidget(self.gaussian_noise_apply ,4,2)
+
+        uniform_noise_label, self.uniform_noise_slider, self.uniform_noise_apply = self.slider_function("Uniform Noise",500,0,0,self.update_noise_uniform,self.apply_noise)
+        self.right_layout.addWidget(uniform_noise_label,5,0)
+        self.right_layout.addWidget(self.uniform_noise_slider ,5,1)
+        self.right_layout.addWidget(self.uniform_noise_apply ,5,2)
+
+        saltpepper_noise_label, self.saltpepper_noise_slider, self.saltpepper_noise_apply = self.slider_function("Saltpepper Noise",100,0,0,self.update_noise_saltpepper,self.apply_noise)
+        self.right_layout.addWidget(saltpepper_noise_label,6,0)
+        self.right_layout.addWidget(self.saltpepper_noise_slider ,6,1)
+        self.right_layout.addWidget(self.saltpepper_noise_apply ,6,2)
+
+    def color_adjustments(self):
         
-        self.brightness_apply = QPushButton("Apply")
-        self.brightness_apply.setVisible(False)
-        self.brightness_apply.setStyleSheet(grayscale_button.styleSheet())
-        self.brightness_apply.clicked.connect(self.ie.apply_brightness)
-        self.layout.addWidget(self.brightness_apply, 9,2)
-        #brightness
+        hue_label, self.hue_slider, self.hue_apply = self.slider_function("Hue",180,-180,0,self.update_hue,self.apply_hue)
+        self.right_layout.addWidget(hue_label,7,0)
+        self.right_layout.addWidget(self.hue_slider ,7,1)
+        self.right_layout.addWidget(self.hue_apply ,7,2)
 
-        #contrast
-        contrast_label = QLabel("Contrast")
-        self.contrast_slider = QSlider(Qt.Horizontal)
-        self.contrast_slider.setMinimum(-100)
-        self.contrast_slider.setMaximum(100)
-        self.contrast_slider.setValue(0)
-        self.contrast_slider.valueChanged.connect(self.update_contrast)      
+        gaussian_falloff_label, self.gaussian_falloff_slider, self.gaussian_falloff_apply = self.slider_function("Vignette",540,0,0,self.update_vignette,self.apply_vignette)
+        self.right_layout.addWidget(gaussian_falloff_label,8,0)
+        self.right_layout.addWidget(self.gaussian_falloff_slider ,8,1)
+        self.right_layout.addWidget(self.gaussian_falloff_apply ,8,2)
 
-        self.contrast_apply = QPushButton("Apply")
-        self.contrast_apply.setVisible(False)
-        self.contrast_apply.setStyleSheet(grayscale_button.styleSheet())
-        self.contrast_apply.clicked.connect(self.ie.apply_contrast)
-        self.layout.addWidget(self.contrast_apply, 10,2)
-        #contrast
-
-        #hue
-        hue_label = QLabel("Hue")
-        self.hue_slider = QSlider(Qt.Horizontal)
-        self.hue_slider.setMinimum(0)
-        self.hue_slider.setMaximum(255)
-        self.hue_slider.setValue(0)
-        self.hue_slider.valueChanged.connect(self.update_contrast)       
-
-        
-        self.hue_apply = QPushButton("Apply")
-        self.hue_apply.setVisible(False)
-        self.hue_apply.setStyleSheet(grayscale_button.styleSheet())
-        self.hue_apply.clicked.connect(self.ie.apply_contrast)
-        self.layout.addWidget(self.hue_apply, 11,2)
-        #hue
-
-#Red Green Blue Sliders
-        red_label = QLabel("Red")
-        self.red_slider = QSlider(Qt.Horizontal)
-        self.red_slider.setMinimum(-100)
-        self.red_slider.setMaximum(100)
-        self.red_slider.setValue(0)
-        self.red_slider.valueChanged.connect(self.tint_connect)
-        self.red_slider.setContentsMargins(0,0,0,0)
-
-        if self.red_slider.value != 0:
-            self.red_apply = QPushButton("Apply")
-            self.red_apply.setStyleSheet(grayscale_button.styleSheet())
-            self.red_apply.clicked.connect(self.ie.apply_brightness)
-            self.layout.addWidget(self.brightness_apply, 13,2)
-
-        blue_label = QLabel("Blue")
-        self.blue_slider = QSlider(Qt.Horizontal)
-        self.blue_slider.setMinimum(-100)
-        self.blue_slider.setMaximum(100)
-        self.blue_slider.setValue(0)
-        self.blue_slider.valueChanged.connect(self.tint_connect)      
-
-        if self.blue_slider.value != 0:
-            self.blue_apply = QPushButton("Apply")
-            self.blue_apply.setStyleSheet(grayscale_button.styleSheet())
-            self.blue_apply.clicked.connect(self.ie.apply_contrast)
-            self.layout.addWidget(self.contrast_apply, 14,2)
-
-        green_label = QLabel("Green")
-        self.green_slider = QSlider(Qt.Horizontal)
-        self.green_slider.setMinimum(0)
-        self.green_slider.setMaximum(255)
-        self.green_slider.setValue(0)
-        self.green_slider.valueChanged.connect(self.tint_connect)       
-
-        if self.green_slider.value != 0:
-            self.green_apply = QPushButton("Apply")
-            self.green_apply.setStyleSheet(grayscale_button.styleSheet())
-            self.green_apply.clicked.connect(self.ie.apply_contrast)
-            self.layout.addWidget(self.hue_apply, 15,2)
-
-        self.layout.addWidget(brightness_label,9,0)
-        self.layout.addWidget(self.brightness_slider,9,1)
-
-        self.layout.addWidget(contrast_label,10,0)
-        self.layout.addWidget(self.contrast_slider,10,1)
-
-        self.layout.addWidget(hue_label,11,0)
-        self.layout.addWidget(self.hue_slider,11,1)
-
-        self.layout.addWidget(red_label,13,0)
-        self.layout.addWidget(self.red_slider,13,1)
-
-        self.layout.addWidget(blue_label,14,0)
-        self.layout.addWidget(self.blue_slider,14,1)
-
-        self.layout.addWidget(green_label,15,0)
-        self.layout.addWidget(self.green_slider,15,1)
-
-        self.layout.setRowMinimumHeight(0,0)
-        self.layout.setVerticalSpacing(5)
-
+    def line(self):
+        blur_frame_1 = QFrame()
+        blur_frame_1.setFrameShape(QFrame.Shape.HLine)
+        blur_frame_1.setLineWidth(1)
+        blur_frame_1.setContentsMargins(0,0,0,0)
 
     def invert(self):
         invert = self.ie.invert()
@@ -398,34 +370,95 @@ class MainWindow(QMainWindow):
         if motion:
             self.ie.show_pixmap(motion,self.main_panel)
             
-
-
-
-    def update_brightness(self):
-        brightness = self.brightness_slider
+    def update_brightness(self, value):
         self.brightness_apply.setVisible(True)
-        if brightness:
-            value = brightness.value()
-            pixmap = self.ie.delta_brightness(value)
-            if pixmap:
-                self.ie.show_pixmap(pixmap,self.main_panel)
+        pixmap = self.ie.delta_brightness(value)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
-    def update_contrast(self):
-        contrast = self.contrast_slider
-        self.contrast_apply.setVisible(True)
-        if contrast:
-            value = contrast.value()
-            pixmap = self.ie.delta_contrast(value)
-            if pixmap:
-                self.ie.show_pixmap(pixmap,self.main_panel)
+    def apply_brightness(self):
+        pixmap = self.ie.apply_brightness()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
-    def update_hue(self):
+    def update_blacks(self, value):
+        self.blacks_apply.setVisible(True)
+        pixmap = self.ie.delta_blacks(value)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def apply_blacks(self):
+        pixmap = self.ie.apply_blacks()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def update_whites(self, value):
+        self.whites_apply.setVisible(True)
+        pixmap = self.ie.delta_whites(value)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def apply_whites(self):
+        pixmap = self.ie.apply_whites()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def update_noise(self, noise):
+        self.gaussian_noise_apply.setVisible(True)
+        pixmap = self.ie.delta_noise(noise)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def update_noise_uniform(self, noise):
+        self.uniform_noise_apply.setVisible(True)
+        pixmap = self.ie.delta_noise_uniform(noise)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def update_noise_saltpepper(self,noise):
+        self.saltpepper_noise_apply.setVisible(True)
+        pixmap = self.ie.delta_noise_saltpepper(noise)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def apply_noise(self):
+        pixmap = self.ie.apply_noise()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def update_hue(self, degree):
         self.hue_apply.setVisible(True)
-        pass
+        pixmap = self.ie.delta_hue(degree)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+        
+    def apply_hue(self):
+        pixmap = self.ie.apply_hue()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
-    def tint_connect(self):
-        pass
+    def update_vignette(self, strength):
+        self.gaussian_falloff_apply.setVisible(True)
+        pixmap = self.ie.delta_gaussian_falloff(strength)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+        
+    def apply_vignette(self):
+        pixmap = self.ie.apply_gaussian_falloff()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
+
+    def update_contrast(self, value):
+        self.contrast_apply.setVisible(True)
+        pixmap = self.ie.delta_contrast(value)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def apply_contrast(self):
+        pixmap = self.ie.apply_contrast()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
     def save_file(self):
         file_name,_ = QFileDialog.getSaveFileName(self,"Save Image", "", "Images (*.png *.jpg *.jpeg *.bmp *.gif)")
