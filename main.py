@@ -1,6 +1,6 @@
 import sys 
 from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QScrollArea,QComboBox,
-                               QMenuBar, QToolButton,QMenu, QFrame, QHBoxLayout, QFileDialog, QPushButton, QGridLayout, QSlider, QTabWidget)
+                               QMenuBar, QToolButton,QMenu, QFrame, QHBoxLayout, QFileDialog, QPushButton, QGridLayout, QSlider, QTabWidget, QGroupBox)
 from PySide6.QtCore import Qt, QSize   
 from PySide6.QtGui import QAction, QIcon
 
@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         #Tab widget
         self.filter_tabs = QTabWidget()
         self.filter_tabs.addTab(self.filter_items(), "Filters")
-        self.filter_tabs.addTab(self.blur_items(), "Blurs")
+        #self.filter_tabs.addTab(self.blur_items(), "Blurs")
 
         self.filter_layout.addWidget(self.filter_tabs)
         #left_layout.addWidget(self.filter_tabs)
@@ -98,7 +98,7 @@ class MainWindow(QMainWindow):
         self.filter_panel.setObjectName("filter_panel")
         self.right_panel.setObjectName("right_panel")
 
-        self.main_layout.addLayout(middle_layout,1)
+        #self.main_layout.addLayout(middle_layout,1)
         self.right_panel_items()
 
     def filter_items(self):
@@ -114,15 +114,23 @@ class MainWindow(QMainWindow):
         invert_button.setIconSize(QSize(80, 80))
         invert_button.setText("Invert")
         invert_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        invert_button.setFixedSize(100, 105)
+        invert_button.setFixedSize(110, 125)
         invert_button.clicked.connect(self.invert)
+
+        oil_button = QToolButton()
+        oil_button.setIcon(QIcon(r"filter_previews\oilpaint.jpg"))
+        oil_button.setIconSize(QSize(80, 80))
+        oil_button.setText("Oil Paint")
+        oil_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+        oil_button.setFixedSize(110, 125)
+        oil_button.clicked.connect(self.oil)
 
         grayscale_button = QToolButton()
         grayscale_button.setIcon(QIcon(r"filter_previews\grayscale.jpg"))
         grayscale_button.setIconSize(QSize(80, 80))
         grayscale_button.setText("Grayscale")
         grayscale_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        grayscale_button.setFixedSize(100, 105)
+        grayscale_button.setFixedSize(110, 125)
         grayscale_button.clicked.connect(self.grayscale)
 
         sobel_button = QToolButton()
@@ -130,7 +138,7 @@ class MainWindow(QMainWindow):
         sobel_button.setIconSize(QSize(80, 80))
         sobel_button.setText("Sobel")
         sobel_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        sobel_button.setFixedSize(100,105)
+        sobel_button.setFixedSize(110, 125)
         sobel_button.clicked.connect(self.sobel)
 
         sepia_button = QToolButton()
@@ -138,7 +146,7 @@ class MainWindow(QMainWindow):
         sepia_button.setIconSize(QSize(80, 80))
         sepia_button.setText("Sepia")
         sepia_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        sepia_button.setFixedSize(100,105)
+        sepia_button.setFixedSize(110, 125)
         sepia_button.clicked.connect(self.sepia)
         
 
@@ -147,7 +155,7 @@ class MainWindow(QMainWindow):
         cartoon_button.setIconSize(QSize(80, 80))
         cartoon_button.setText("Cartoon")
         cartoon_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        cartoon_button.setFixedSize(100,105)
+        cartoon_button.setFixedSize(110, 125)
         cartoon_button.clicked.connect(self.cartoon)
         
 
@@ -156,7 +164,7 @@ class MainWindow(QMainWindow):
         emboss_button.setIconSize(QSize(80, 80))
         emboss_button.setText("Emboss")
         emboss_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
-        emboss_button.setFixedSize(100,105)
+        emboss_button.setFixedSize(110, 125)
         emboss_button.clicked.connect(self.emboss)
         
         horizontal_layout.addWidget(invert_button)
@@ -165,56 +173,41 @@ class MainWindow(QMainWindow):
         horizontal_layout.addWidget(sepia_button)
         horizontal_layout.addWidget(cartoon_button)
         horizontal_layout.addWidget(emboss_button)
-
+        horizontal_layout.addWidget(oil_button)
 
         scroll_area.setWidget(container)
-        #self.filter_layout.addWidget(scroll_area)
+        self.filter_layout.addWidget(scroll_area)
         return scroll_area
 
     def blur_items(self):
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        #scroll_area.setFixedHeight(200)
-        #scroll_area.setAlignment(Qt.AlignmentFlag.AlignTop)
+        group_box = QGroupBox("Blur Tools")
+        layout = QGridLayout(group_box)
+        layout.setSpacing(10)
 
-        container = QWidget()
-        vertical_layout = QHBoxLayout(container)  
-       
-        simple_blur = QPushButton("Simple")
-        simple_blur.setFixedSize(150,35)
-        simple_blur.clicked.connect(self.simple_blur)
+        simple_blur = self.create_item("Simple Blur", self.simple_blur)
+        gaussian_blur = self.create_item("Gaussian Blur", self.gaussian_blur)
+        median_blur = self.create_item("Median Blur", self.median_blur)
+        bilateral_blur = self.create_item("Bilateral Blur", self.bilateral_blur)
+        box_filter = self.create_item("Box Filter", self.box_blur)
+        motion_blur = self.create_item("Motion Blur", self.motion_blur)
 
-        gaussian_blur = QPushButton("Gaussian")
-        gaussian_blur.setFixedSize(150,35)
-        gaussian_blur.clicked.connect(self.gaussian_blur)
 
-        median_blur = QPushButton("Median")
-        median_blur.setFixedSize(150,35)
-        median_blur.clicked.connect(self.median_blur)
+        layout.addWidget(simple_blur, 0, 0)
+        layout.addWidget(gaussian_blur, 0, 1)
+        layout.addWidget(median_blur, 1, 0)
+        layout.addWidget(bilateral_blur, 1, 1)
+        layout.addWidget(box_filter, 2, 0)
+        layout.addWidget(motion_blur, 2, 1)
 
-        bilateral_blur = QPushButton("Bilateral")
-        bilateral_blur.setFixedSize(150,35)
-        bilateral_blur.clicked.connect(self.bilateral_blur)
-
-        box_filer = QPushButton("Box Filter")
-        box_filer.setFixedSize(150,35)
-        box_filer.clicked.connect(self.box_blur)
-
-        motion_blur = QPushButton("Motion")
-        motion_blur.setFixedSize(150,35)
-        motion_blur.clicked.connect(self.motion_blur)
-
-        vertical_layout.addWidget(simple_blur)
-        vertical_layout.addWidget(gaussian_blur)
-        vertical_layout.addWidget(median_blur)
-        vertical_layout.addWidget(bilateral_blur)
-        vertical_layout.addWidget(box_filer)
-        vertical_layout.addWidget(motion_blur)
-
-        scroll_area.setWidget(container)
-        #self.right_layout.addWidget(scroll_area, alignment=Qt.AlignmentFlag.AlignTop|Qt.AlignmentFlag.AlignHCenter)
-        return scroll_area
-
+        return group_box
+    
+    def create_item(self,text,var):
+        button = QPushButton(text);
+        button.setCursor(Qt.PointingHandCursor)
+        button.setMinimumHeight(80);
+        button.setObjectName("BlurButton")
+        button.clicked.connect(var)
+        return button
     def right_panel_items(self):
         self.right_layout.setContentsMargins(25,25,25,25)
 
@@ -223,8 +216,10 @@ class MainWindow(QMainWindow):
         self.adjustment_tabs.addTab(self.fx(), "FX")
         self.adjustment_tabs.addTab(self.color_adjustments(),"Colour")
 
-        self.right_layout.addWidget(self.adjustment_tabs) 
-
+        #self.right_layout.addWidget(self.adjustment_tabs,10,0) 
+        self.right_layout.addWidget(self.blur_items(),10,0,1,3)
+        #self.right_layout.setRowStretch(2,1)
+        
 
     def slider_function(self,label,max,min,default,update_call,apply_call):
         label = QLabel(label)
@@ -239,11 +234,6 @@ class MainWindow(QMainWindow):
         slider_apply.setVisible(True)
 
         slider_apply.clicked.connect(apply_call)
-
-
-        #label_add = self.right_layout.addWidget(label,row,0)
-        #slider_add = self.right_layout.addWidget(slider,row,1)
-        #apply_add = self.right_layout.addWidget(slider_apply,row,2)
 
         return label, slider, slider_apply
     
@@ -269,6 +259,7 @@ class MainWindow(QMainWindow):
         self.right_layout.addWidget(whites_label,3,0)
         self.right_layout.addWidget(self.whites_slider ,3,1)
         self.right_layout.addWidget(self.whites_apply ,3,2)
+
     
     def fx(self):
         gaussian_noise_label, self.gaussian_noise_slider, self.gaussian_noise_apply = self.slider_function("Normal Noise",500,0,0,self.update_noise,self.apply_noise)
@@ -298,6 +289,16 @@ class MainWindow(QMainWindow):
         self.right_layout.addWidget(self.gaussian_falloff_slider ,8,1)
         self.right_layout.addWidget(self.gaussian_falloff_apply ,8,2)
 
+        saturation_label, self.saturation_slider, self.saturation_apply = self.slider_function("Saturation",10,0,5,self.update_saturation,self.apply_saturation)
+        self.right_layout.addWidget(saturation_label,9,0)
+        self.right_layout.addWidget(self.saturation_slider ,9,1)
+        self.right_layout.addWidget(self.saturation_apply ,9,2)
+
+        temp_label, self.temp_slider, self.temp_apply = self.slider_function("Temperature",10,0,5,self.update_temperature,self.apply_temp)
+        self.right_layout.addWidget(temp_label,10,0)
+        self.right_layout.addWidget(self.temp_slider ,10,1)
+        self.right_layout.addWidget(self.temp_apply ,10,2)
+
     def line(self):
         blur_frame_1 = QFrame()
         blur_frame_1.setFrameShape(QFrame.Shape.HLine)
@@ -309,11 +310,18 @@ class MainWindow(QMainWindow):
         if invert:
             self.ie.show_pixmap(invert,self.main_panel) 
 
+    def oil(self):
+        oil = self.ie.oilpainting()
+        if oil:
+            self.ie.show_pixmap(oil,self.main_panel)
+
     def grayscale(self):
         gray = self.ie.grayScale()
         if gray:
             self.ie.show_pixmap(gray, self.main_panel)
         print("action works")
+
+
 
     def sobel(self):
         sobel = self.ie.sobel()
@@ -426,6 +434,17 @@ class MainWindow(QMainWindow):
         if pixmap:
             self.ie.show_pixmap(pixmap,self.main_panel)
 
+    def update_saturation(self,strength):
+        self.saturation_apply.setVisible(True)
+        pixmap = self.ie.delta_saturation(strength)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
+    def apply_saturation(self):
+        pixmap = self.ie.apply_saturation()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+
     def update_hue(self, degree):
         self.hue_apply.setVisible(True)
         pixmap = self.ie.delta_hue(degree)
@@ -448,6 +467,16 @@ class MainWindow(QMainWindow):
         if pixmap:
             self.ie.show_pixmap(pixmap,self.main_panel)
 
+    def update_temperature(self, temp):
+        self.temp_apply.setVisible(True)
+        pixmap = self.ie.delta_temperature(temp)
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
+        
+    def apply_temp(self):
+        pixmap = self.ie.apply_temp()
+        if pixmap:
+            self.ie.show_pixmap(pixmap,self.main_panel)
 
     def update_contrast(self, value):
         self.contrast_apply.setVisible(True)

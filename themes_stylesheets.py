@@ -65,6 +65,38 @@ def darkmode():
         border: 1px solid #2a2a2a;
     }
 
+    /* ===== Tool Buttons ===== */
+    QToolButton {
+        background-color: #2A2A32;
+        padding: 6px 6px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+    }
+    QToolButton:hover{
+        background-color: #3c3c3c;
+        border: 1px solid #5C5470;
+    }
+    QToolButton:pressed{
+        background-color: #505050;
+    }      
+    
+    /* ===== Group Boxes (New for Adjustments Panel) ===== */
+    QGroupBox {
+        border: 1px solid #444;
+        border-radius: 6px;
+        margin-top: 20px; /* Leave space for the title */
+        font-weight: bold;
+        padding-top: 10px;
+    }
+    QGroupBox::title {
+        subcontrol-origin: margin;
+        subcontrol-position: top left;
+        left: 10px;
+        padding: 0 5px;
+        background-color: #1E1E24; /* Matches window bg to hide border behind text */
+        color: #aaa;
+    }
+
     /* ===== Labels ===== */
     QLabel {
         color: #f5f5f5;
@@ -76,28 +108,45 @@ def darkmode():
         background-color: #1E1E24;
         border: none;
     }
+    
+    /* Specific styling for buttons inside Scroll Areas (Blur menu) */
+    QScrollArea QPushButton {
+        text-align: left;
+        background-color: transparent;
+        border: none;
+        padding: 8px 15px;
+    }
+    QScrollArea QPushButton:hover {
+        background-color: #2A2A32;
+        border-radius: 4px;
+    }
 
     /* ===== Tabs ===== */
     QTabWidget::pane {
         border: 1px solid #2a2a2a;
         background: #2C2C36;
-        border-radius: 8px;
-        margin: 0px;
+        border-radius: 4px;
+        margin-top: -1px; 
     }
     QTabBar::tab {
-        background-color: #2C2C36;   
-        color: #f5f5f5;
-        padding: 6px 14px;
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
-        margin-right: 2px;
+        background-color: #1e1e1e;   
+        color: #888;
+        padding: 8px 20px;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        margin-right: 4px;
+        border: 1px solid #2a2a2a;
+        border-bottom: none;
     }
     QTabBar::tab:selected {
-        background: #3c3c3c;
+        background: #2C2C36;
+        color: #fff;
         font-weight: bold;
+        border-bottom: 1px solid #2C2C36; /* Blend with pane */
     }
     QTabBar::tab:hover {
-        background: #343434;
+        background: #252525;
+        color: #ccc;
     }
 
     /* ===== Sliders ===== */
@@ -182,17 +231,6 @@ def darkmode():
         border: 1px solid #5C5470;
         }
 
-    QToolButton {
-        background-color: #2A2A32;
-        padding: 6px 6px;
-                }
-
-    QToolButton:hover{
-        background-color: #3c3c3c;
-                }
-    QToolButton:pressed{
-        background-color: #505050 ;
-                }      
     QIcon {
         corner-radius: 8px;
         }       
@@ -204,24 +242,25 @@ def lightmode():
             QMainWindow, QWidget {
                 background-color: #faf9fd;   /* near white lilac */
                 color: #2a173b;              /* deep violet text */
-                font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+                font-family: "Fira Code", "JetBrains Mono", "Cascadia Code", monospace;
                 font-size: 14px;
             }
 
             /* ===== Menubar ===== */
             QMenuBar {
-                background-color: #e8e4f9;   /* pale lavender */
+                background-color: #e8e4f9;
                 color: #2a173b;
-                padding: 6px;
+                border-bottom: 1px solid #2a2a2a;
+                
             }
             QMenuBar::item {
                 background-color: transparent;
                 padding: 6px 12px;
             }
             QMenuBar::item:selected {
-                background-color: #d1c7f3;   /* soft violet highlight */
-                color: #000000;
+                background: #d1c7f3;
                 border-radius: 4px;
+                background-color: #d1c7f3;   /* soft violet highlight */
             }
 
             /* ===== Menus ===== */
@@ -273,10 +312,70 @@ def lightmode():
                 color: #000000;
             }
 
+            /* ===== Group Boxes (New) ===== */
+            QGroupBox {
+                border: 1px solid #d1c7f3;
+                border-radius: 6px;
+                margin-top: 20px;
+                font-weight: bold;
+                color: #3f2c5f;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                left: 10px;
+                padding: 0 5px;
+                background-color: #faf9fd;
+            }
+
             /* ===== Labels ===== */
             QLabel {
                 color: #3f2c5f;   /* indigo text */
                 font-size: 13px;
+            }
+
+            /* ===== Scroll Areas ===== */
+            QScrollArea {
+                background-color: #faf9fd;
+                border: none;
+            }
+            
+            /* Specific styling for buttons inside Scroll Areas (Blur menu) */
+            QScrollArea QPushButton {
+                text-align: left;
+                background-color: transparent;
+                border: none;
+                padding: 8px 15px;
+            }
+            QScrollArea QPushButton:hover {
+                background-color: #e8e4f9;
+                border-radius: 4px;
+            }
+
+            /* ===== Tabs ===== */
+            QTabWidget::pane {
+                border: 1px solid #d1c7f3;
+                background: #ffffff;
+                border-radius: 4px;
+                margin-top: -1px;
+            }
+            QTabBar::tab {
+                background-color: #e8e4f9;
+                color: #555;
+                padding: 8px 20px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                margin-right: 4px;
+            }
+            QTabBar::tab:selected {
+                background: #ffffff;
+                color: #3f2c5f;
+                font-weight: bold;
+                border: 1px solid #d1c7f3;
+                border-bottom: none;
+            }
+            QTabBar::tab:hover {
+                background: #f0edf9;
             }
 
             /* ===== Sliders ===== */
@@ -318,6 +417,8 @@ def lightmode():
         #filter_panel {
             background-color: #faf9fd;   /* deep purple */
             border: 2px solid #3f2c5f;
+            
+            
             }
 
         #right_panel {

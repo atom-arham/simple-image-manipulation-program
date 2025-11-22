@@ -62,7 +62,6 @@ class importExport:
         self.history.push(self.numpy_image)
         invert_conversion = cv.bitwise_not(self.numpy_image)
         self.numpy_image = invert_conversion
-        self.base_brightness_image = self.numpy_image.copy()
         invert_to_pixmap = self.numpy_to_qpixmap(invert_conversion)
         return invert_to_pixmap
 
@@ -160,6 +159,14 @@ class importExport:
         self.base_brightness_image = self.numpy_image.copy()
         return self.numpy_to_qpixmap(empty_image)   
 
+    def oilpainting(self):
+        image = self.numpy_image
+
+        oiled = cv.xphoto.oilPainting(image,9,3)
+        self.numpy_image = oiled
+        to_pixmap = self.numpy_to_qpixmap(self.numpy_image)
+        return to_pixmap
+    
 #Blur
 
     def simple_blur(self):
@@ -371,9 +378,13 @@ class importExport:
         mask = mask / np.max(mask)
     
         vignette = np.empty_like(image)
-        for i in range(image.shape[2]):
-            vignette[:, :, i] = image[:, :, i] * mask
-
+        if not image.shape == 1:
+            for i in range(image.shape[2]):
+                vignette[:, :, i] = image[:, :, i] * mask
+        else:
+            for i in range(image.shape[1]):
+                vignette[:, :, i] = image[:, :, i] * mask
+                
         self.gaussian_falloff = vignette.astype(np.uint8)
 
         return self.numpy_to_qpixmap(self.gaussian_falloff)
@@ -397,6 +408,45 @@ class importExport:
     def apply_contrast(self):
         self.numpy_image = self.con_adjusted
         return self.numpy_to_qpixmap(self.con_adjusted)
+
+    def delta_saturation(self, strength):
+        strength = strength/5
+        image = self.numpy_image
+
+        hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV).astype(np.float32)
+    
+
+        hue, saturation, value = cv.split(hsv)
+        saturation *= strength
+        saturation = np.clip(saturation, 0, 255)
+
+        hsv = cv.merge([hue, saturation, value]).astype(np.uint8)
+        self.saturation_adjusted = cv.cvtColor(hsv, cv.COLOR_HSV2BGR)
+        return self.numpy_to_qpixmap(self.saturation_adjusted)
+
+    def apply_saturation(self):
+        self.numpy_image = self.saturation_adjusted
+        return self.numpy_to_qpixmap(self.saturation_adjusted)
+
+    def delta_temperature(self,temp):
+        value = 1 + (temp-5)*-0.1
+
+        
+        image = self.numpy_image.astype(np.float32)
+        Blue, Green, Red = cv.split(image)
+        Red *= value
+        Blue /= value
+
+        Red = np.clip(Red, 0, 255)
+        Green = np.clip(Green,0,255)
+        Blue = np.clip(Blue, 0, 255)
+
+        self.temp_adjusted = cv.merge([Blue, Green, Red]).astype(np.uint8)
+        return self.numpy_to_qpixmap(self.temp_adjusted)
+    
+    def apply_temp(self):
+        self.numpy_image = self.temp_adjusted
+        return self.numpy_to_qpixmap(self.numpy_image)
 
     def isNumpyImage(self, image):
         if image is None:
