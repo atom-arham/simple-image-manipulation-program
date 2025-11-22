@@ -31,6 +31,7 @@ A desktop application built with Python that lets you apply filters, blurs, and 
 * **Python** – Core logic.
 * **PySide6** – User Interface (GUI).
 * **OpenCV** – Core Image manipulation and processing.
+* **PIL(Python Imaging Library)** - Image manipulation and processing.
 * **NumPy** – Matrix multiplication for fast filter calculations.
 
 
