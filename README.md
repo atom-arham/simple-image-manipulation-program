@@ -3,7 +3,7 @@
 
 # Simple Image Manipulation Program (SIMP)
 
-A desktop application built with Python that lets you apply filters, blurs, and colour adjustments to your photos in real-time.
+A desktop application built with Python that lets you apply filters, blurs, and colour adjustments to your photos in real time.
 
 ## Features
 **Functionalities**
